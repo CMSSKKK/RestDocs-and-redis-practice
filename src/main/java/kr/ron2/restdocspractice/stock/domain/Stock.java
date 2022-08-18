@@ -1,4 +1,4 @@
-package kr.ron2.restdocspractice.stock;
+package kr.ron2.restdocspractice.stock.domain;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
