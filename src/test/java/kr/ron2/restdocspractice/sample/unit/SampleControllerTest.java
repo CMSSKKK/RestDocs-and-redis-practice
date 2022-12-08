@@ -29,28 +29,28 @@ class SampleControllerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Test
-    void getSampleResponse_mockMvc() throws Exception {
-        SampleRequest requestBody = new SampleRequest(1L, "ron2");
-        SampleResponse responseBody = SampleResponse.from(requestBody);
-
-        mockMvc.perform(post("/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestBody)))
-
-                .andExpect(status().isOk())
-                .andExpect(content().string(objectMapper.writeValueAsString(responseBody)))
-                .andDo(document("sample-test",
-                        ApiDocumentUtils.getDocumentRequest(),
-                        ApiDocumentUtils.getDocumentResponse(),
-                        requestFields(fieldWithPath("id").type(JsonFieldType.NUMBER).description("아이디"),
-                                fieldWithPath("name").type(JsonFieldType.STRING).description("이름")),
-
-                        responseFields(fieldWithPath("id").type(JsonFieldType.NUMBER).description("아이디"),
-                                fieldWithPath("name").type(JsonFieldType.STRING).description("이름"))
-                ));
-
-    }
+//    @Test
+//    void getSampleResponse_mockMvc() throws Exception {
+//        SampleRequest requestBody = new SampleRequest(1L, "ron2");
+//        SampleResponse responseBody = SampleResponse.from(requestBody);
+//
+//        mockMvc.perform(post("/users")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(objectMapper.writeValueAsString(requestBody)))
+//
+//                .andExpect(status().isOk())
+//                .andExpect(content().string(objectMapper.writeValueAsString(responseBody)))
+//                .andDo(document("sample-test",
+//                        ApiDocumentUtils.getDocumentRequest(),
+//                        ApiDocumentUtils.getDocumentResponse(),
+//                        requestFields(fieldWithPath("id").type(JsonFieldType.NUMBER).description("아이디"),
+//                                fieldWithPath("name").type(JsonFieldType.STRING).description("이름")),
+//
+//                        responseFields(fieldWithPath("id").type(JsonFieldType.NUMBER).description("아이디"),
+//                                fieldWithPath("name").type(JsonFieldType.STRING).description("이름"))
+//                ));
+//
+//    }
 
 
 }

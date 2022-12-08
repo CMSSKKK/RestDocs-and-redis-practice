@@ -1,15 +1,13 @@
 package kr.ron2.restdocspractice.sample;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class SampleRequest {
 
-    private Long id;
-    private String name;
+    private final Long id;
+    private final String name;
+
 
 }

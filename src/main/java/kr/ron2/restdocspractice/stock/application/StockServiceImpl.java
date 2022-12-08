@@ -4,10 +4,7 @@ import kr.ron2.restdocspractice.stock.domain.Stock;
 import kr.ron2.restdocspractice.stock.infra.StockJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.redis.core.RedisOperations;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.SessionCallback;
-import org.springframework.data.redis.core.SetOperations;
+import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +29,6 @@ public class StockServiceImpl implements StockService {
     }
 
     @Override
-    //@Transactional
     public void decrease(Long stockId, Long quantity) {
         SetOperations<String, Object> stringObjectSetOperations = redisTemplate.opsForSet();
         String key = String.format("stock:%d", stockId);
@@ -42,18 +38,18 @@ public class StockServiceImpl implements StockService {
         if(pop == null) {
             pop = "0";
         }
+
         System.out.println("POP========="+pop);
         long quauntity = Long.parseLong(pop) - quantity;
-        //System.out.println(quauntity);
+        System.out.println(quauntity);
         Object execute = redisTemplate.execute(new SessionCallback() {
 
             @Override
             public Object execute(RedisOperations operations) throws DataAccessException {
-                //operations.watch(key);
+                operations.watch(key);
                 operations.multi();
-
-                SetOperations setOperations = operations.opsForSet();
-                setOperations.add(key, quantity+"");
+                ValueOperations valueOperations = operations.opsForValue();
+                valueOperations.set(key, quantity+"");
                 return operations.exec();
             }
         });

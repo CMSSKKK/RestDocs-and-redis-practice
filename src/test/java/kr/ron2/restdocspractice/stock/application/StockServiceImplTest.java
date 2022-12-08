@@ -11,10 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.redis.core.RedisOperations;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.SessionCallback;
-import org.springframework.data.redis.core.SetOperations;
+import org.springframework.data.redis.core.*;
 
 import java.util.NoSuchElementException;
 import java.util.concurrent.CountDownLatch;
@@ -30,42 +27,14 @@ class StockServiceImplTest {
 
     @Autowired
     private StockService stockService;
-
     @Autowired
     private StockJpaRepository stockJpaRepository;
-
     @Autowired
     private RedisTemplate redisTemplate;
+    @Autowired
+    private RedisService redisService;
 
-    private ExecutorService executorService = Executors.newFixedThreadPool(5);
-
-    @BeforeEach
-    void setUp() {
-        Stock item = Stock.of("아이템", 100L);
-
-        Stock saved = stockJpaRepository.save(item);
-        String key = String.format("stock:%d", saved.getId());
-        redisTemplate.watch(key);
-        Object execute = redisTemplate.execute(new SessionCallback() {
-            @Override
-            public Object execute(RedisOperations operations) throws DataAccessException {
-
-                //redisTemplate.watch(key);
-                redisTemplate.multi();
-
-                SetOperations setOperations = operations.opsForSet();
-                setOperations.add(String.format("stock:%d", saved.getId()), saved.getQuantity() + "");
-                return operations.exec();
-            }
-        });
-
-        System.out.println(execute);
-    }
-
-    @AfterEach
-    void tearDown() {
-        stockJpaRepository.deleteAll();
-    }
+    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     @DisplayName("재고감소")
     @Test
@@ -82,21 +51,43 @@ class StockServiceImplTest {
 
     }
 
-    @DisplayName("재고감소 동시성 테스트")
     @Test
-    void order() throws InterruptedException {
+    void setKeyTest() {
+        redisService.setKey("");
+    }
+
+    @Test
+    void oneCommandSetKeyTest() {
+        redisService.oneCommandSet("no-transaction");
+    }
+
+    @Test
+    void setnxTest() throws InterruptedException {
+
+        boolean strkey = redisService.setLockAndIncr("strkey", 10);
+        System.out.println(strkey);
+    }
+
+    @Test
+    void setnxTestMultiThread() throws InterruptedException {
+
+        CountDownLatch countDownLatch = new CountDownLatch(10);
         int count = 10;
-        CountDownLatch countDownLatch = new CountDownLatch(count);
-        for (int i = 0; i < count; i++) {
+        while (count > 0) {
             executorService.execute(() -> {
-                        stockService.decrease(1L, 10L);
-                        countDownLatch.countDown();
+                try {
+                    redisService.setLockAndIncr("strkey", 10);
+
+                } catch (InterruptedException | RuntimeException e) {
+                    e.printStackTrace();
+                }
+                countDownLatch.countDown();
             });
+            count--;
+            Thread.sleep(100);
         }
-
         countDownLatch.await();
-        //Stock stock = stockJpaRepository.findById(1L).orElseThrow(NoSuchElementException::new);
-
-        //Assertions.assertThat(stock.getQuantity()).isEqualTo(0);
+        String strkey = (String) redisTemplate.opsForValue().get("strkey");
+        System.out.println(strkey);
     }
 }
