@@ -1,6 +1,7 @@
 package kr.ron2.restdocspractice.stock.application;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -8,10 +9,14 @@ import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
+import java.awt.desktop.OpenFilesEvent;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RedisServiceImpl implements RedisService {
 
     private final RedisTemplate<String, String> redisTemplate;
@@ -41,6 +46,7 @@ public class RedisServiceImpl implements RedisService {
     public void oneCommandSet(String key) {
 
         ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
+        // O(1) 동시성 문제 없음
         valueOperations.set(key, key);
     }
 
@@ -65,5 +71,26 @@ public class RedisServiceImpl implements RedisService {
         System.out.println(o);
         return o.equals("1");
 
+    }
+
+    @Override
+    public boolean getCoupon(String couponKey) {
+        List<Object> result = redisTemplate.execute(new SessionCallback<>() {
+            @Override
+            public List<Object> execute(RedisOperations operations) throws DataAccessException {
+                operations.watch(couponKey);
+                operations.multi();
+                operations.opsForValue().decrement(couponKey);
+                return operations.exec();
+            }
+        });
+        Long value = (Long) result.get(0);
+        int count = value.intValue();
+        log.info("thread = {}, count = {}", Thread.currentThread(), count);
+        if(count < 0) {
+            throw new RuntimeException();
+        }
+
+        return true;
     }
 }

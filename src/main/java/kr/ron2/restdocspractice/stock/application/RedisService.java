@@ -9,4 +9,7 @@ public interface RedisService {
     void oneCommandSet(String key);
 
     boolean setLockAndIncr(String key, long count) throws InterruptedException;
+
+    boolean getCoupon(String couponKey);
+
 }
